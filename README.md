@@ -159,7 +159,8 @@ GitHub Actions pipeline:
 
 Planned enhancements:
 
-- 🔁 Refresh tokens & roles
+- ✅ Refresh tokens
+- 🔁 Role-based access
 - 🔔 Alert notifications (Email / Slack / Telegram)
 - 🌍 Domain + HTTPS
 - 🧱 Terraform IaC

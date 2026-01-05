@@ -20,6 +20,8 @@ def get_current_user(
     token = credentials.credentials
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
         user_id: str = payload.get("sub")
         if not user_id:
             raise Exception()
