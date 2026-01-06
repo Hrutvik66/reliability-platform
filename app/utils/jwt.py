@@ -5,7 +5,7 @@ from app.config import settings
 ALGORITHM = "HS256"
 
 
-def create_access_token(user_id: str, minutes: int = 15):
+def create_access_token(user_id: str, minutes: int = 1440):
     payload = {
         "sub": user_id,
         "type": "access",

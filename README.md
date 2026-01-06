@@ -160,6 +160,7 @@ GitHub Actions pipeline:
 Planned enhancements:
 
 - ✅ Refresh tokens
+- ✅ Access token expiration handling
 - 🔁 Role-based access
 - 🔔 Alert notifications (Email / Slack / Telegram)
 - 🌍 Domain + HTTPS
