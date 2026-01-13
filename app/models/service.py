@@ -17,5 +17,5 @@ class Service(Base, TimestampMixin):
 
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
 
-    check_results = relationship("CheckResult", back_populates="service")
-    alerts = relationship("Alert", back_populates="service")
+    check_results = relationship("CheckResult", back_populates="service", cascade="all, delete-orphan")
+    alerts = relationship("Alert", back_populates="service", cascade="all, delete-orphan")

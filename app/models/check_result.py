@@ -9,7 +9,7 @@ class CheckResult(Base):
     __tablename__ = "check_results"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id"))
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"))
 
     status_code = Column(Integer)
     response_time_ms = Column(Float)

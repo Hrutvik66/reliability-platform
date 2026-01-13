@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.service import Service
 from app.models.check_result import CheckResult
 from app.models.alert import Alert
+from app.services.alert_dispatcher import dispatch_alert
 
 from app.metrics import (
     CHECK_TOTAL,
@@ -64,6 +65,7 @@ def check_service(db: Session, service: Service):
             message=f"{service.name} is DOWN"
         )
         db.add(alert)
+        dispatch_alert(db, alert)
 
     if is_up and last_alert and last_alert.type == "DOWN":
         alert = Alert(
@@ -73,5 +75,6 @@ def check_service(db: Session, service: Service):
         )
         last_alert.resolved_at = result.checked_at
         db.add(alert)
+        dispatch_alert(db, alert)
 
     db.commit()
