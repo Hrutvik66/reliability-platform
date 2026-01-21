@@ -8,9 +8,11 @@ from app.models.alert import Alert
 from app.services.alert_dispatcher import dispatch_alert
 
 from app.metrics import (
-    CHECK_TOTAL,
-    CHECK_FAILURES,
-    RESPONSE_TIME,
+    service_checks_total,
+    service_check_failures_total,
+    service_response_time_ms,
+    service_up,
+    service_alerts_total,   
 )
 
 
@@ -27,14 +29,17 @@ def check_service(db: Session, service: Service):
         is_up = response.status_code < 500
         status_code = response.status_code
 
-        CHECK_TOTAL.labels(service.name).inc()
+        service_checks_total.labels(service.name).inc()
 
         if latency_ms is not None:
-            RESPONSE_TIME.labels(service.name).observe(latency_ms)
+            service_response_time_ms.labels(service.name).observe(latency_ms)
 
-        if not is_up:
-            CHECK_FAILURES.labels(service.name).inc()
-
+        if is_up:
+            service_up.labels(service.name).set(1)
+        else:
+            service_check_failures_total.labels(service.name).inc()
+            service_up.labels(service.name).set(0)
+        service_response_time_ms.labels(service.name).observe(latency_ms)
 
     except requests.RequestException:
         latency_ms = None
@@ -66,6 +71,7 @@ def check_service(db: Session, service: Service):
         )
         db.add(alert)
         dispatch_alert(db, alert)
+        service_alerts_total.labels(service.name).inc()
 
     if is_up and last_alert and last_alert.type == "DOWN":
         alert = Alert(
@@ -76,5 +82,6 @@ def check_service(db: Session, service: Service):
         last_alert.resolved_at = result.checked_at
         db.add(alert)
         dispatch_alert(db, alert)
+        service_alerts_total.labels(service.name).inc()
 
     db.commit()
