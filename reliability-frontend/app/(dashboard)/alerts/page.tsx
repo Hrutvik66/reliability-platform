@@ -1,70 +1,47 @@
 "use client"
 
-import { useState } from "react"
-import { Bell, Filter } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Bell } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { AlertItem } from "@/components/alerts/alert-item"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
 import type { Alert } from "@/lib/types"
-
-// Mock alerts data - in real app, this would come from API
-const mockAlerts: (Alert & { serviceName: string })[] = [
-  {
-    id: "1",
-    service_id: "s1",
-    serviceName: "Production API",
-    type: "DOWN",
-    message: "Service returned 503 status code",
-    triggered_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    resolved_at: null,
-    sent: true,
-  },
-  {
-    id: "2",
-    service_id: "s2",
-    serviceName: "Authentication Service",
-    type: "RECOVERED",
-    message: "Service is back online",
-    triggered_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    resolved_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    sent: true,
-  },
-  {
-    id: "3",
-    service_id: "s2",
-    serviceName: "Authentication Service",
-    type: "DOWN",
-    message: "Connection timeout after 5000ms",
-    triggered_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    resolved_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    sent: true,
-  },
-  {
-    id: "4",
-    service_id: "s3",
-    serviceName: "Payment Gateway",
-    type: "RECOVERED",
-    message: "Service is back online",
-    triggered_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    resolved_at: new Date(Date.now() - 1000 * 60 * 60 * 23).toISOString(),
-    sent: true,
-  },
-]
 
 type FilterType = "all" | "active" | "resolved"
 
 export default function AlertsPage() {
   const [filter, setFilter] = useState<FilterType>("all")
+  const [alerts, setAlerts] = useState<(Alert & { serviceName: string })[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredAlerts = mockAlerts.filter((alert) => {
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await api.getAlerts()
+        setAlerts(data)
+      } catch (err) {
+        console.log("[v0] Error fetching alerts:", err)
+        setError(err instanceof Error ? err.message : "Failed to fetch alerts")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAlerts()
+  }, [])
+
+  const filteredAlerts = alerts.filter((alert) => {
     if (filter === "active") return !alert.resolved_at
     if (filter === "resolved") return !!alert.resolved_at
     return true
   })
 
-  const activeCount = mockAlerts.filter((a) => !a.resolved_at).length
+  const activeCount = alerts.filter((a) => !a.resolved_at).length
 
   return (
     <div className="flex flex-col">
@@ -99,8 +76,25 @@ export default function AlertsPage() {
           </div>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+              <Bell className="h-8 w-8 animate-pulse text-muted-foreground" />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold">Loading alerts...</h3>
+          </div>
+        )}
+
         {/* Alerts List */}
-        {filteredAlerts.length === 0 ? (
+        {!loading && filteredAlerts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
               <Bell className="h-8 w-8 text-muted-foreground" />
@@ -115,15 +109,17 @@ export default function AlertsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredAlerts.map((alert) => (
-              <AlertItem
-                key={alert.id}
-                alert={alert}
-                serviceName={alert.serviceName}
-              />
-            ))}
-          </div>
+          !loading && (
+            <div className="space-y-3">
+              {filteredAlerts.map((alert) => (
+                <AlertItem
+                  key={alert.id}
+                  alert={alert}
+                  serviceName={alert.serviceName}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

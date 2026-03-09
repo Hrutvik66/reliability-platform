@@ -82,6 +82,11 @@ class ApiClient {
   async getAllServices(): Promise<Service[]> {
     return this.request<Service[]>("/admin/services")
   }
+
+  // Alert endpoints
+  async getAlerts(): Promise<(Alert & { serviceName: string })[]> {
+    return this.request<(Alert & { serviceName: string })[]>("/services/alerts")
+  }
 }
 
 export const api = new ApiClient()
